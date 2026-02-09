@@ -24,6 +24,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import zipfile
 from pathlib import Path
 from typing import Iterable, List, Optional
 
@@ -164,6 +165,27 @@ def detect_main_tex(directory: Path) -> Path:
 def copy_tree(src: Path, dst: Path) -> None:
     logging.debug("Copying %s -> %s", src, dst)
     shutil.copytree(src, dst)
+
+
+def materialize_source(src: Path, dst: Path) -> None:
+    """Copy, extract, or stage the user input into the workspace."""
+    if src.is_dir():
+        copy_tree(src, dst)
+        return
+    suffix = src.suffix.lower()
+    dst.mkdir(parents=True, exist_ok=True)
+    if suffix == ".zip":
+        logging.debug("Extracting %s -> %s", src, dst)
+        with zipfile.ZipFile(src) as archive:
+            archive.extractall(dst)
+        return
+    if suffix == ".tex":
+        logging.debug("Copying single LaTeX file %s -> %s", src, dst)
+        shutil.copy2(src, dst / src.name)
+        return
+    raise ValueError(
+        f"Unsupported input '{src}'. Provide a directory, .tex file, or .zip archive."
+    )
 
 
 def run_latexdiff(
