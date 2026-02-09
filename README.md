@@ -44,6 +44,3 @@ python latex_differ.py ./old ./new --main access.tex -o trustworthiness_diff.pdf
 - Because the script copies both trees before running `latexdiff`, any large assets (figures, data files) will be duplicated temporarily; ensure you have enough disk space.
 - Bibliography flattening requires that `.bbl` files already exist in both source trees. Run `latexmk`/`bibtex` on each version first if citations are missing.
 - This tool and its documentation were built with assistance from OpenAI Codex.
-
-## License
-MIT (or adapt to your project’s chosen license). Contributions and suggestions welcome—please open a PR/issue on GitHub.
