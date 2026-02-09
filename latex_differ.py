@@ -493,6 +493,37 @@ def compose_search_path(entries: List[str], existing: Optional[str]) -> str:
     return os.pathsep.join(parts)
 
 
+def ensure_bibliography(main_tex: Path) -> None:
+    """Ensure a .bbl exists for the given main TeX file."""
+    bbl_path = main_tex.with_suffix(".bbl")
+    if bbl_path.exists():
+        logging.debug("Found bibliography: %s", bbl_path)
+        return
+    logging.info("Generating bibliography for %s", main_tex)
+    compile_bibliography(main_tex)
+    if not bbl_path.exists():
+        raise RuntimeError(f"Failed to produce bibliography file {bbl_path}")
+
+
+def compile_bibliography(main_tex: Path) -> None:
+    tex_dir = main_tex.parent
+    tex_name = main_tex.name
+    env = build_tex_env([tex_dir])
+    latexmk = shutil.which("latexmk")
+    if latexmk:
+        cmd = [latexmk, "-pdf", "-interaction=nonstopmode", "-halt-on-error", tex_name]
+        run_logged(cmd, cwd=tex_dir, env=env)
+        return
+
+    pdflatex = ensure_command("pdflatex")
+    run_logged([pdflatex, "-interaction=nonstopmode", tex_name], cwd=tex_dir, env=env)
+    bibtex = shutil.which("bibtex")
+    if not bibtex:
+        raise RuntimeError("bibtex not found on PATH; cannot build bibliography.")
+    run_logged([bibtex, main_tex.stem], cwd=tex_dir, env=env)
+    run_logged([pdflatex, "-interaction=nonstopmode", tex_name], cwd=tex_dir, env=env)
+
+
 def prepare_workspace(keep: bool) -> tuple[Path, Optional[tempfile.TemporaryDirectory]]:
     if keep:
         path = Path(tempfile.mkdtemp(prefix="latex-differ-"))
@@ -547,6 +578,9 @@ def main() -> int:
         tmp_new = workspace / "new"
         copy_tree(old_dir, tmp_old)
         copy_tree(new_dir, tmp_new)
+
+        ensure_bibliography(tmp_old / main_rel)
+        ensure_bibliography(tmp_new / main_rel)
 
         diff_tex = run_latexdiff(
             tmp_old / main_rel,
