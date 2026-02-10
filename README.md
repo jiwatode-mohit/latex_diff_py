@@ -65,5 +65,3 @@ python latex_differ.py paper_v1.tex paper_v2.tex
 - The script automatically runs `latexmk` (or falls back to `pdflatex` + `bibtex`) on each staged project so that `.bbl` files exist and newly added references appear in the diff.
 - This tool and its documentation were built with assistance from OpenAI Codex.
 
-## License
-MIT (or adapt to your project’s chosen license). Contributions and suggestions welcome—please open a PR/issue on GitHub.
